@@ -1,0 +1,94 @@
+$Id: README 8292 2024-02-22 20:33:25Z flaterco $
+
+
+Preface
+-------
+
+IMPORTANT
+
+Incompatible changes occurred on 2003-03-18 and again on 2003-03-27.
+
+- The order of arguments to build_tide_db changed.
+- The encoding of slack offsets changed.
+- "Simplified" offset records were abolished.
+
+See ChangeLog for more information.
+
+
+Intro
+-----
+
+tcd-utils are command-line tools for converting Tide Constituent Database
+(TCD) files to and from other formats.  They were written by Jan C. Depner
+but are now maintained by David Flater.
+
+The tcd-utils distribution is available from
+https://flaterco.com/xtide/files.html
+
+The tcd-utils distribution includes:
+
+ * build_tide_db to convert harmonics.txt, offsets.xml, and NAVO formats to
+   harmonics.tcd;
+
+ * restore_tide_db to generate harmonics.txt and offsets.xml from
+   harmonics.tcd; and
+
+ * rewrite_tide_db to convert a v1 TCD file to a v2 TCD file or a similar
+   operation.
+
+tcd-utils are unclassified, distribution unlimited, public domain.  They are
+distributed in the hope that they will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+
+
+Requirements
+------------
+
+libtcd 2.2 or compatible newer version.  libtcd is available from
+https://flaterco.com/xtide/files.html#libtcd
+
+
+Installation
+------------
+
+The normal route:
+
+  bash-3.1$ ./configure
+  bash-3.1$ make
+  bash-3.1$ su
+  bash-3.1# make install
+
+tcd-utils are packaged with the popular and portable GNU automake, so all
+usual GNU tricks should work.  Help on configuration options can be found in
+the INSTALL file or obtained by entering ./configure --help
+
+
+Converter Usage
+---------------
+
+NOTE:  The order of arguments to build_tide_db changed 2003-03-18.
+
+nameless> ./build_tide_db harmonics.tcd harmonics.txt offsets.xml
+[... diagnostics ...]
+7124 records written
+
+nameless> ./restore_tide_db harmonics.tcd restored
+nameless> ls restored*
+restored.txt  restored.xml
+
+Note the following fragility in build_tide_db:  between the congen output and
+the start of comments for the first data set in harmonics.txt there is
+expected to be a block of comments ending with a line containing the word
+MERCHANTABILITY.  These comments must be present or build_tide_db will bomb.
+Follow existing examples.
+
+
+See also
+--------
+
+TCD format documentation:
+https://flaterco.com/xtide/libtcd.html
+
+tideEditor, available from
+https://flaterco.com/xtide/files.html#extras

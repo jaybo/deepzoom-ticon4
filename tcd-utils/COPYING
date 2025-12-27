@@ -1,0 +1,7 @@
+tcd-utils themselves are public domain.  However, the GNU automake,
+autoconf, etc. scripts bundled with them as part of their build
+process are not.  Please see their respective licenses.
+
+tcd-utils are distributed in the hope that they will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

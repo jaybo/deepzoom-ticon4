@@ -1,0 +1,201 @@
+-*-text-*-
+
+2024-02-22
+
+  (Compliance)  build_tide_db.c:  Fixed FTB with GCC 14.  GCC is now making
+  it an error to pass char ** for a char const * const * parameter.  This is
+  valid in C++ but not in C for arbitrary standards reasons.  Bug report
+  credit:  Mamoru Tasaka.  Refs:
+    https://c-faq.com/ansi/constmismatch.html
+    https://isocpp.org/wiki/faq/const-correctness#constptrptr-conversion
+
+  (Bug)  Added AM_DISTCHECK_CONFIGURE_FLAGS to Makefile.am to enable make
+  distcheck to succeed when out-of-path includes and libs are necessary to
+  build.
+
+  (Code rot)  Regenerated autoconf scripts.
+
+  (Code rot)  Fixed outdated URLs in README and build_tide_db.c.
+
+  (Cleanup)  build_tide_db.c:  Removed some commented-out code and comments.
+
+2012-01-15
+
+  (Code rot)  Regenerated autoconf scripts.
+
+  (Usability)  Improved error checking and error messages when a legacy
+  harmonics file input to build_tide_db does not conform to the expected
+  format.
+
+  (Cleanup)  Deleted the #if 0'd locate_country function from build_tide_db.
+
+2008-08-20
+
+  (x64) There were two fgets where build_tide_db would throw an unwarranted
+  assertion failure if the buffer happened to be 2^32-byte aligned.
+
+  Fixed truncation of values from XML input to 256 bytes.
+
+  Accept field name "datumkind" as alias for "datum".
+
+  Got rid of AM_MAINTAINER_MODE; caused 'make dist-bzip2' to do the right
+  thing.
+
+  Removed the auto-shmauto scripts.
+
+  Removed ./ from program invocations in rewrite_tide_db.sh so that if
+  someone did "make install" it should still work.
+
+  Caused build_tide_db and restore_tide_db to output PACKAGE_STRING with
+  usage info (thereby indicating the version).
+
+2006-11-27
+
+  Corrected an error message in configure.  No source code changes.
+
+2006-11-26
+
+  Added warranty disclaimer to COPYING.  No source code changes.
+
+2006-11-20
+
+  Spun off tideEditor into a separate tarball.
+
+  Converted to automake.
+
+  Changed #includes per libtcd 2.2.
+
+  Fixed asserts with side-effects.
+
+  Added quoting in rewrite_tide_db.sh.
+
+2004-10-19
+
+  Fixed nits revealed by g++ -Wall -Wextra -pedantic.
+
+  Took -Wall back out of the distributed Makefile.
+
+2004-10-15
+
+  build_tide_db and restore_tide_db:  updated to libtcd 2.0.
+
+  restore_tide_db:  fixed bogus logic that could cause null fields to
+  be output in the XML.
+
+  Added rewrite_tide_db script.  It would be "nice" to write a program
+  that reads the TCD file into memory and writes it back out, but the
+  conversion to text and back is good enough that maybe I shouldn't
+  bother.
+
+2004-09-17
+
+  build_tide_db and restore_tide_db:
+
+  Fixed lots of bugs in xml.c.  All of the error checking and error
+  messages were broken; it was failing instead of adding new time
+  zones; etc.
+
+  Lots of changes to read and write new hot comments in .txt format
+  and new fields in .xml format.  TCD files can now translate to .txt
+  and .xml and back with very little lossage.  Old .txt and .xml files
+  (as from Harmbase 1 and other utils not yet updated) should still
+  work as input to build_tide_db, except that it no longer tries to
+  guess at the country if it's not specified using one of the new
+  fields; instead, country is set to Unknown.
+
+  Some cosmetic changes to .txt output to minimize the output of diff.
+
+  Added comments in output indicating what was translated and when.
+
+  Makefile:  added -Wall to CFLAGS (at least this stuff compiles
+  cleanly).
+
+2004-08-15
+
+   build_tide_db.c:
+   Additional tweaks related to the scanning for start of tide records
+   to enable production of TCD files containing zero records from
+   congen output to occur without assertion failures.
+
+2004-08-12
+
+    build_tide_db.c:
+    Added commentary near, and commented out, a second occurrence of
+    the hard-coded 27 line count fixed on 2004-08-09, which had no
+    impact on the behavior of the program because the file got closed
+    immediately afterward.
+
+2004-08-09
+
+    build_tide_db.c:
+    Changed the fragile code that skips comments above the first data
+    set in harmonics.txt from counting 27 lines to searching for the
+    word MERCHANTABILITY.  Documented this fragility in the README.
+
+    restore_tide_db.h:
+    Updated the rote commentary added to restored .txt and .xml files.
+
+2003-12-18
+
+    build_tide_db.c:
+    Tweaked country name parsing again.
+    Changed default restriction on harmonics format input from
+    "public domain" to "non-commercial use only."
+
+2003-11-22
+
+    build_tide_db.c:
+    Fixed incorrect parsing of datum identification in harmonics file input.
+    Tweaked country name parsing.
+
+2003-04-03
+David Flater
+
+    Incorporated changes from Jan Depner to fix fandango on core and
+    broken country parsing that occurred when processing NAVO files
+    with build_tide_db.
+
+2003-03-27
+David Flater
+
+    Abolished "simplified" type 2 records.  See
+    http://www.flaterco.com/xtide/tcd_notes.html
+
+2003-03-19
+David Flater
+
+    Fixed buffer overflow in build_tide_db.c that was causing
+    "Missing country [nothing]" messages on some platforms.
+
+    Realized that version.h is only used for tideEditor and has
+    nothing to do with build_tide_db or restore_tide_db.  Moved
+    changelog for everything else into README.txt.
+
+2003-03-18
+David Flater / August Hahn
+
+    Incorporated patches from August Hahn:
+
+    - complain about but make do with subordinate station fields with
+    missing units (ugh).
+
+    - modified build_tide_db.c to:
+
+      1) process multiple files in one pass.  I changed the order of
+      the arguments to the tool, so watch out for this.
+
+      2) try to locate the country code for each station.  This
+      handles the various states into the United States, as well as
+      several other locations that don't quite fall right.
+
+      3) flag countries that are missing but take no action for now
+      since the country locating is not perfect yet.
+
+    Problems with units in subordinate stations are now flagged better.
+
+    Fixed bug where stations having slack offsets were incorrectly
+    "simplified."
+
+    Fixed bug where slack offsets of zero were equated to omitted slack
+    offsets.  Omitted slack offsets are now represented with the value
+    NULLSLACKOFFSET defined in libtcd/tcd.h.
