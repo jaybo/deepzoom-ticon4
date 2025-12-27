@@ -181,19 +181,31 @@ tcd_cons = {
     "KJ2-IHO": "KJ2-IHO",
 }
 
+def convert_datum(old):
+    return "MLLW"
 
 # Read TICON-4 data
 df = pd.read_csv("data/TICON-4.csv", sep=",")
 
 # Count unique stations by source
 # (assuming stations are uniquely identified by lat/lon)
-stations_by_source = df.groupby(["lat", "lon", "gesla_source"]).size().reset_index()
-source_counts = stations_by_source["gesla_source"].value_counts()
+stations_by = df.groupby(["lat", "lon", "gesla_source"]).size().reset_index()
+by_counts = stations_by["gesla_source"].value_counts()
 
 print("TICON-4 Stations by Source:")
-print(source_counts)
-print(f"\nTotal unique stations: {len(stations_by_source)}")
-print(f"Total sources: {len(source_counts)}")
+print(by_counts)
+print(f"\nTotal unique stations: {len(stations_by)}")
+print(f"Total sources: {len(by_counts)}")
+
+stations_by = df.groupby(["lat", "lon", "datum_information"]).size().reset_index()
+by_counts = stations_by["datum_information"].value_counts()
+
+# Count datums
+print("TICON-4 Datums:")
+print(by_counts)
+print(f"\nTotal unique stations: {len(stations_by)}")
+print(f"Total sources: {len(by_counts)}")
+
 
 stations = []
 # ['lat', 'lon', 'con', 'amp', 'pha', 'amp_std', 'pha_std', 'missing_obs',
@@ -228,7 +240,7 @@ for ll, st in df.groupby(["lat", "lon"]):
         "gauge_type": gauge_type,
         "country": country,
         "record_quality": record_quality,
-        "datum_informatio": datum_information,
+        "datum_information": datum_information,
         "tz": tz,
     }
     for index, con in enumerate(cons):
@@ -256,11 +268,11 @@ for station in stations:
     station_txt += "# datum: Mean Lower Low Water\n"
     station_txt += "# confidence: 10\n"
     station_txt += "# !units: feet\n"
-    station_txt += "# !longitude: -159.5920\n"
-    station_txt += "# !latitude: 21.9033\n"
+    station_txt += f"# !longitude: {station["lon"]}\n"
+    station_txt += f"# !latitude: {station["lat"]}\n"
     station_txt += "Port Allen, Hanapepe Bay, Kauai Island, Hawaii\n"
-    station_txt += "+00:00 :Pacific/Honolulu\n"
-    station_txt += "0.8300 feet\n"
+    station_txt += f"+00:00 {station["tz"]}\n"
+    station_txt += "0.00 feet\n"
 #J1              0.0400  237.60
 #K1            
     for con in tcd_cons:
