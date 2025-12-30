@@ -1,5 +1,17 @@
 import pandas as pd
 from timezonefinder import TimezoneFinder
+from city_from_latlng import get_city_from_latlng
+import country_converter as coco
+import os, sys
+import json
+import time
+
+csv_file = "TICON-4.csv"
+json_file = "TICON-4.json"
+txt_file = "TICON-4.txt"
+
+tf = TimezoneFinder(in_memory=True)  # reuse
+cc = coco.CountryConverter()
 
 # tcd name : ticon name or None
 tcd_cons = {
@@ -184,111 +196,157 @@ tcd_cons = {
 def convert_datum(old):
     return "MLLW"
 
-# Read TICON-4 data
-df = pd.read_csv("data/TICON-4.csv", sep=",")
+def add_station_name(station):
+    lat = station["lat"]
+    lon = station["lon"]
+    country_from_ISO = station["country_from_ISO"]
 
-# Count unique stations by source
-# (assuming stations are uniquely identified by lat/lon)
-stations_by = df.groupby(["lat", "lon", "gesla_source"]).size().reset_index()
-by_counts = stations_by["gesla_source"].value_counts()
+    name = f"{lat}, {lon}, {country_from_ISO}"
+    city, state, country2, addx = get_city_from_latlng(lat, lon)
+    country2 = country2 or country_from_ISO
 
-print("TICON-4 Stations by Source:")
-print(by_counts)
-print(f"\nTotal unique stations: {len(stations_by)}")
-print(f"Total sources: {len(by_counts)}")
+    if city and state and country2:
+        name = f"{city}, {state}, {country2}"
+    elif addx and not (city or state):
+        name = f"{addx}, {country2}"
+    elif city and state:
+        name = f"{city}, {state}, {country2}"
 
-stations_by = df.groupby(["lat", "lon", "datum_information"]).size().reset_index()
-by_counts = stations_by["datum_information"].value_counts()
-
-# Count datums
-print("TICON-4 Datums:")
-print(by_counts)
-print(f"\nTotal unique stations: {len(stations_by)}")
-print(f"Total sources: {len(by_counts)}")
+    print (name)
+    
+    station["name"] = name
 
 
-stations = []
-# ['lat', 'lon', 'con', 'amp', 'pha', 'amp_std', 'pha_std', 'missing_obs',
-#       'no_of_obs', 'years_of_obs', 'start_date', 'end_date', 'gesla_source',
-#       'tide_gauge_name', 'type', 'country', 'record_quality',
-#       'datum_information']
-
-tf = TimezoneFinder(in_memory=True)  # reuse
-
-for ll, st in df.groupby(["lat", "lon"]):
-    # print(ll)
-    # print(station)
-    lat = st["lat"].to_list()[0]
-    lon = st["lon"].to_list()[0]
-    gesla_source = st["gesla_source"].to_list()[0]
-    tide_gauge_name = st["tide_gauge_name"].to_list()[0]
-    gauge_type = st["type"].to_list()[0]
-    country = st["country"].to_list()[0]
-    record_quality = st["record_quality"].to_list()[0]
-    datum_information = st["datum_information"].to_list()[0]
-    cons = st["con"].to_list()
-    amps = st["amp"].to_list()
-    phas = st["pha"].to_list()
-
-    tz = tf.timezone_at(lng=lon, lat=lat)
-    # name = st[""]
-    station = {
-        "lat": lat,
-        "lon": lon,
-        "gesla_source": gesla_source,
-        "tide_gauge_name": tide_gauge_name,
-        "gauge_type": gauge_type,
-        "country": country,
-        "record_quality": record_quality,
-        "datum_information": datum_information,
-        "tz": tz,
-    }
-    for index, con in enumerate(cons):
-        amp = amps[index]
-        pha = phas[index]
-        station[con] = {"amp": amp, "pha": pha}
-
-    if "seattle" in tide_gauge_name:
-        stations.append(station)
-
-
-# print(len(stations))
-# print(stations)
-
-out = []
-for station in stations:
-    station_txt = ""
-    station_txt += "# BEGIN HOT COMMENTS\n"
-    station_txt += f"# country: {station["country"]}\n"
-    station_txt += f"# source: {station["gesla_source"]}\n"
-    station_txt += "# restriction: Public domain\n"
-    station_txt += "# station_id_context: NOS\n"
-    station_txt += "# station_id: 1611347\n"
-    station_txt += "# date_imported: 20241228\n"
-    station_txt += "# datum: Mean Lower Low Water\n"
-    station_txt += "# confidence: 10\n"
-    station_txt += "# !units: feet\n"
-    station_txt += f"# !longitude: {station["lon"]}\n"
-    station_txt += f"# !latitude: {station["lat"]}\n"
-    station_txt += "Port Allen, Hanapepe Bay, Kauai Island, Hawaii\n"
-    station_txt += f"+00:00 {station["tz"]}\n"
-    station_txt += "0.00 feet\n"
-#J1              0.0400  237.60
-#K1            
-    for con in tcd_cons:
-        # get the ticon name of the constituent
-        con_ticon = tcd_cons[con]
-        if con_ticon is None:
-            station_txt += "x 0 0\n"
-        else:
-            station_val = station.get(con_ticon)
-            if station_val is None:
+def write_csv(stations):
+    out = []
+    for station in stations:
+        station_txt = ""
+        station_txt += "# BEGIN HOT COMMENTS\n"
+        station_txt += f"# country: {station["country"]}\n"
+        station_txt += f"# source: {station["gesla_source"]}\n"
+        station_txt += "# restriction: Public domain\n"
+        station_txt += "# station_id_context: NOS\n"
+        station_txt += "# station_id: 1611347\n"
+        station_txt += "# date_imported: 20241228\n"
+        station_txt += "# datum: Mean Lower Low Water\n"
+        station_txt += "# confidence: 10\n"
+        station_txt += "# !units: feet\n"
+        station_txt += f"# !longitude: {station["lon"]}\n"
+        station_txt += f"# !latitude: {station["lat"]}\n"
+        station_txt += "Port Allen, Hanapepe Bay, Kauai Island, Hawaii\n"
+        station_txt += f"+00:00 {station["tz"]}\n"
+        station_txt += "0.00 feet\n"
+    #J1              0.0400  237.60
+    #K1            
+        for con in tcd_cons:
+            # get the ticon name of the constituent
+            con_ticon = tcd_cons[con]
+            if con_ticon is None:
                 station_txt += "x 0 0\n"
             else:
-                amp = station_val["amp"]
-                pha = station_val["pha"]
-                station_txt += f"{con}          {amp}   {pha}\n"
-    
-    print (station_txt)
-    with open ("test.txt", "w") as f:
-        f.write(station_txt)
+                station_val = station.get(con_ticon)
+                if station_val is None:
+                    station_txt += "x 0 0\n"
+                else:
+                    amp = station_val["amp"]
+                    pha = station_val["pha"]
+                    station_txt += f"{con}          {amp}   {pha}\n"
+        
+        print (station_txt)
+        with open ("test.txt", "w") as f:
+            f.write(station_txt)
+
+
+def convert_to_json():
+    # Read TICON-4 data
+    df = pd.read_csv("data/TICON-4.csv", sep=",")
+
+    # columns
+    # ['lat', 'lon', 'con', 'amp', 'pha', 'amp_std', 'pha_std', 'missing_obs',
+    #       'no_of_obs', 'years_of_obs', 'start_date', 'end_date', 'gesla_source',
+    #       'tide_gauge_name', 'type', 'country', 'record_quality',
+    #       'datum_information']
+
+    countries_to_ignore = ["USA"]
+
+    stations = []
+
+    for ll, st in df.groupby(["lat", "lon"]):
+        country = st["country"].to_list()[0]
+        if country in countries_to_ignore:
+            continue
+
+        lat = st["lat"].to_list()[0]
+        lon = st["lon"].to_list()[0]
+        no_of_obs = st["no_of_obs"].to_list()[0]
+        years_of_obs = st["years_of_obs"].to_list()[0]
+        start_date = st["start_date"].to_list()[0]
+        end_date = st["end_date"].to_list()[0]
+        gesla_source = st["gesla_source"].to_list()[0]
+        tide_gauge_name = st["tide_gauge_name"].to_list()[0]
+        gauge_type = st["type"].to_list()[0]
+        record_quality = st["record_quality"].to_list()[0]
+        datum_information = st["datum_information"].to_list()[0]
+        
+        cons = st["con"].to_list()
+        amps = st["amp"].to_list()
+        phas = st["pha"].to_list()
+
+        tz = tf.timezone_at(lng=lon, lat=lat)
+        country_from_ISO = cc.convert(names = country, to = 'name_short')
+
+        # name = st[""]
+        station = {
+            "lat": lat,
+            "lon": lon,
+            "no_of_obs": no_of_obs,
+            "years_of_obs": years_of_obs,
+            "start_date": start_date,
+            "end_date": end_date,
+            "gesla_source": gesla_source,
+            "tide_gauge_name": tide_gauge_name,
+            "gauge_type": gauge_type,
+            "country": country,
+            "country_from_ISO": country_from_ISO,
+            "record_quality": record_quality,
+            "datum_information": datum_information,
+            "tz": tz,
+            "name": ""
+        }
+        for index, con in enumerate(cons):
+            amp = amps[index]
+            pha = phas[index]
+            station[con] = {"amp": amp, "pha": pha}
+
+        stations.append(station)
+
+    return stations
+
+def write_as_json(stations = None):
+    if stations is None:
+        stations = convert_to_json()
+
+    with open (json_file, "w") as f:
+        f.write(json.dumps(stations))
+    return stations
+
+def read_as_json():
+    with open (json_file, "r") as f:
+        stations = json.load(f)
+    return stations
+
+def add_names(stations):
+    for station in stations:
+        add_station_name(station)
+        time.sleep(1.25)
+
+if __name__ == "__main__":
+    stations = write_as_json() # initial create
+    print(len(stations))
+    stations = read_as_json()
+    print(len(stations))
+    add_names(stations)
+    stations = write_as_json() # with names appended
+
+
+
