@@ -357,12 +357,13 @@ def add_names(stations, redo = False):
 
 def to_geojson(stations):
     out = []
-    for station in stations:
+    for index, station in enumerate(stations):
         pt = geojson.Point([station["lon"], station["lat"]])
         pt["properties"] = {"name": station["name"]}
-        out.append(pt)
+        out.append(geojson.Feature(index, pt))
+    fc = geojson.FeatureCollection(out)
     with open (geojson_file, "w") as f:
-        f.write(json.dumps(out))
+        f.write(json.dumps(fc))
 
 if __name__ == "__main__":
     redo = False
