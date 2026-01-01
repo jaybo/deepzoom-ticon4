@@ -11,6 +11,13 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+                {
+            "name": "Test.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "test.py",
+            "console": "integratedTerminal"
         }
     ]
 }

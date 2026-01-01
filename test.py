@@ -1,13 +1,15 @@
 import pandas as pd
 from timezonefinder import TimezoneFinder
-from city_from_latlng import get_city_from_latlng
+from city_from_latlng import get_name_from_latlng
 import country_converter as coco
 import os, sys
 import json
 import time
+import geojson
 
 csv_file = "TICON-4.csv"
 json_file = "TICON-4.json"
+geojson_file = "TICON-4.geojson"
 txt_file = "TICON-4.txt"
 
 tf = TimezoneFinder(in_memory=True)  # reuse
@@ -201,16 +203,16 @@ def add_station_name(station):
     lon = station["lon"]
     country_from_ISO = station["country_from_ISO"]
 
-    name = f"{lat}, {lon}, {country_from_ISO}"
-    city, state, country2, addx = get_city_from_latlng(lat, lon)
-    country2 = country2 or country_from_ISO
+    # name = f"{lat}, {lon}, {country_from_ISO}"
+    name = get_name_from_latlng(lat, lon, country_from_ISO)
+    # country2 = country2 or country_from_ISO
 
-    if city and state and country2:
-        name = f"{city}, {state}, {country2}"
-    elif addx and not (city or state):
-        name = f"{addx}, {country2}"
-    elif city and state:
-        name = f"{city}, {state}, {country2}"
+    # if city and state and country2:
+    #     name = f"{city}, {state}, {country2}"
+    # elif addx and not (city or state):
+    #     name = f"{addx}, {country2}"
+    # elif city and state:
+        # name = f"{city}, {state}, {country2}"
 
     print (name)
     
@@ -268,13 +270,13 @@ def convert_to_json():
     #       'datum_information']
 
     countries_to_ignore = ["USA"]
+    include_seattle = True    
 
     stations = []
 
     for ll, st in df.groupby(["lat", "lon"]):
         country = st["country"].to_list()[0]
-        if country in countries_to_ignore:
-            continue
+ 
 
         lat = st["lat"].to_list()[0]
         lon = st["lon"].to_list()[0]
@@ -288,6 +290,13 @@ def convert_to_json():
         record_quality = st["record_quality"].to_list()[0]
         datum_information = st["datum_information"].to_list()[0]
         
+        if country in countries_to_ignore:
+            if include_seattle and "seattle" in tide_gauge_name:
+                # include seattle just for ease in testing
+                pass
+            else:
+                continue
+    
         cons = st["con"].to_list()
         amps = st["amp"].to_list()
         phas = st["pha"].to_list()
@@ -335,18 +344,42 @@ def read_as_json():
         stations = json.load(f)
     return stations
 
-def add_names(stations):
+def add_names(stations, redo = False):
+    if redo:
+        for station in stations:
+            station["name"] = None
+
     for station in stations:
-        add_station_name(station)
-        time.sleep(1.25)
+        if not station.get("name", None):
+            add_station_name(station)
+            write_as_json(stations) # checkpoint
+            time.sleep(1.25)
+
+def to_geojson(stations):
+    out = []
+    for station in stations:
+        pt = geojson.Point([station["lon"], station["lat"]])
+        pt["properties"] = {"name": station["name"]}
+        out.append(pt)
+    with open (geojson_file, "w") as f:
+        f.write(json.dumps(out))
 
 if __name__ == "__main__":
-    stations = write_as_json() # initial create
-    print(len(stations))
+    redo = False
+
+    # create the list from scratch
+    if redo:
+        stations = write_as_json() # initial create
+        print(len(stations))
+    
     stations = read_as_json()
     print(len(stations))
-    add_names(stations)
-    stations = write_as_json() # with names appended
+
+    add_names(stations, redo) # redo if True, or continue
+
+    to_geojson(stations)
+
+    stations = write_as_json(stations) # with names appended
 
 
 
