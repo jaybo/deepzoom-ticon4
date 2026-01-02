@@ -244,8 +244,8 @@ def write_csv(stations):
         txt += f"# !longitude: {station["lon"]}\n"
         txt += f"# !latitude: {station["lat"]}\n"
         txt += f"{station["name"]}\n"
-        txt += f"+00:00 {station["tz"]}\n"
-        txt += "0.00 meters\n"
+        txt += f"+00:00 :{station["tz"]}\n" # hmm, where did the colon go?
+        txt += "2.023872 meters\n"
         # J1              0.0400  237.60
         # K1
         for con in tcd_cons:

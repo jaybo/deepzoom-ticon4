@@ -1,4 +1,4 @@
-from geopy.geocoders import Nominatim
+# from geopy.geocoders import Nominatim
 import json
 import requests
 

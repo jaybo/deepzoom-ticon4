@@ -15084,8 +15084,8 @@ KJ2-IHO
 # !longitude: -122.339167
 # !latitude: 47.601944
 Belltown, Seattle, Washington, United States
-+00:00 America/Los_Angeles
-0.00 meters
++00:00 :America/Los_Angeles
+2.023872 meters
 J1          0.03782052   -46.890332
 K1          0.82959744   -82.653737
 K2          0.07700971   37.991787
