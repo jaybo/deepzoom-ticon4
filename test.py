@@ -222,43 +222,49 @@ def add_station_name(station):
 
 
 def write_csv(stations):
-    out = []
+    txt = ""
+        
     for station in stations:
-        station_txt = ""
-        station_txt += "# BEGIN HOT COMMENTS\n"
-        station_txt += f"# country: {station["country"]}\n"
-        station_txt += f"# source: {station["gesla_source"]}\n"
-        station_txt += "# restriction: Public domain\n"
-        station_txt += "# station_id_context: NOS\n"
-        station_txt += "# station_id: 1611347\n"
-        station_txt += "# date_imported: 20241228\n"
-        station_txt += "# datum: Mean Lower Low Water\n"
-        station_txt += "# confidence: 10\n"
-        station_txt += "# !units: feet\n"
-        station_txt += f"# !longitude: {station["lon"]}\n"
-        station_txt += f"# !latitude: {station["lat"]}\n"
-        station_txt += "Port Allen, Hanapepe Bay, Kauai Island, Hawaii\n"
-        station_txt += f"+00:00 {station["tz"]}\n"
-        station_txt += "0.00 feet\n"
+        
+        # testing only
+        if not "Seattle" in station["name"]:
+            continue
+
+
+        txt += "# BEGIN HOT COMMENTS\n"
+        txt += f"# country: {station["country"]}\n"
+        txt += f"# source: {station["gesla_source"]}\n"
+        txt += "# restriction: Public Domain\n"
+        txt += f"# station_id_context: {station["gesla_source"]}\n"
+        txt += f"# station_id: {station["tide_gauge_name"]}\n"
+        txt += "# date_imported: 20241228\n"
+        txt += "# datum: Unknown\n"
+        txt += "# confidence: 10\n"
+        txt += "# !units: meters\n"
+        txt += f"# !longitude: {station["lon"]}\n"
+        txt += f"# !latitude: {station["lat"]}\n"
+        txt += f"{station["name"]}\n"
+        txt += f"+00:00 {station["tz"]}\n"
+        txt += "0.00 meters\n"
         # J1              0.0400  237.60
         # K1
         for con in tcd_cons:
             # get the ticon name of the constituent
             con_ticon = tcd_cons[con]
             if con_ticon is None:
-                station_txt += "x 0 0\n"
+                txt += "x 0 0\n"
             else:
                 station_val = station.get(con_ticon)
                 if station_val is None:
-                    station_txt += "x 0 0\n"
+                    txt += "x 0 0\n"
                 else:
-                    amp = station_val["amp"]
+                    amp = station_val["amp"] / 100  # cm to m
                     pha = station_val["pha"]
-                    station_txt += f"{con}          {amp}   {pha}\n"
+                    txt += f"{con}          {amp}   {pha}\n"
 
-        print(station_txt)
-        with open("test.txt", "w") as f:
-            f.write(station_txt)
+    print(txt)
+    with open("TICON-4.txt", "w") as f:
+        f.write(txt)
 
 def stats():
        # Read TICON-4 data
@@ -394,11 +400,18 @@ if __name__ == "__main__":
         stations = write_as_json()  # initial create
         print(len(stations))
 
+    # all stations as json
     stations = read_as_json()
     print(len(stations))
 
+    # add the station name if it doesn't exist
     add_names(stations, redo)  # redo if True, or continue
 
+    # make a geojson version just for visualization
     to_geojson(stations)
 
+    # save as json
     stations = write_as_json(stations)  # with names appended
+
+    # the point of it all, save as csv for build_tide_db
+    write_csv(stations)

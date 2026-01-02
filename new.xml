@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding='ISO-8859-1'?>
+
+<!-- Output of restore_tide_db. -->
+<!-- This file was converted from harmonics-dwf-20241229-free.tcd -->
+<!-- at 2025-12-16 15:29 PST -->
+
+<!-- ** The following boilerplate text is a placeholder only.  Please ** -->
+<!-- ** replace it with the boilerplate and changelog available       ** -->
+<!-- ** separately.                                                   ** -->
+
+<!--
+
+Offset tide stations for use with XTide version 2.2.2 or later.
+
+All coordinates given in this file are approximate.  All tide
+predictions produced through the application of offsets are
+approximate.
+
+********* NOT FOR NAVIGATION ********
+
+*** DO NOT RELY ON THIS DATA FILE FOR DECISIONS THAT CAN RESULT IN ***
+***                   HARM TO ANYONE OR ANYTHING.                  ***
+
+This data file is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Highly trustworthy tide predictions cannot be achieved on a zero
+budget.  If you need guaranteed results, don't use this data!
+Contact the tide authority for your region (NOAA in the U.S.).
+
+WHOSOEVER CHOOSES TO REDISTRIBUTE THIS DATA ASSUMES ALL LIABILITY
+ASSOCIATED THEREWITH.  NEITHER DAVID FLATER NOR ANYONE ELSE INVOLVED
+SHALL BE LIABLE PERSONALLY OR OTHERWISE FOR ANY LOSSES THAT THE
+REDISTRIBUTOR MIGHT SUFFER AS A CONSEQUENCE OF ANY CLAIMS, BOGUS OR
+OTHERWISE, THAT ARE MADE TO THIS DATA.
+
+-->
+
+<document>
+
+</document>
