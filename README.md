@@ -2,7 +2,7 @@
 
 Converts TICON-4.txt file containing worldwide tide harmonics into the .tcd format used by XTide.
 
-The following is for WSL2 Ubuntu 24.4 on Windows.
+The following is for WSL2 Ubuntu 24.04 on Windows.
 
 ## Build libtcd
 
