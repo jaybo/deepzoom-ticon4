@@ -1,8 +1,23 @@
 # TICON-4 processing
 
-Converts TICON-4.txt file containing worldwide tide harmonics into the .tcd format used by XTide
+Converts TICON-4.txt file containing worldwide tide harmonics into the .tcd format used by XTide.
+
+The following is for WSL2 Ubuntu 24.4 on Windows.
 
 ## Build libtcd
+
+Location names and time zone string lengths have expanded.  
+Every client which uses the resulting .tcd file will need these changes.
+
+Edit `tcd.h.in`:
+```
+#define ONELINER_LENGTH      256 // was 128
+```
+Edit `tide_db_default.h`:
+```
+#define DEFAULT_TZFILE_SIZE  64  // was 30
+```
+Build libtcd 
 
 ```
 cd libtcd
@@ -12,6 +27,9 @@ sudo make install
 ```
 
 ## Build tcd_utils
+
+
+
 
 ```
 cd libtcd

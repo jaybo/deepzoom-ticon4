@@ -87,7 +87,7 @@
 /*  Maximum values.  */
 
 /* One-line character strings */
-#define ONELINER_LENGTH      128
+#define ONELINER_LENGTH      256
 /* Verbose character strings */
 #define MONOLOGUE_LENGTH  10000
 #define MAX_CONSTITUENTS    255

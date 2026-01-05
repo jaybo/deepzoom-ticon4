@@ -230,7 +230,7 @@ def write_csv(stations):
         # if not "Seattle" in station["name"]:
         #     continue
 
-
+        txt += "#\n"
         txt += "# BEGIN HOT COMMENTS\n"
         txt += f"# country: {station["country"]}\n"
         txt += f"# source: {station["gesla_source"]}\n"
@@ -260,7 +260,8 @@ def write_csv(stations):
                 else:
                     amp = station_val["amp"] / 100  # cm to m
                     pha = station_val["pha"]
-                    txt += f"{con}          {amp}   {pha}\n"
+                    pha = (pha + 360) % 360 # 0 to 360
+                    txt += f"{con:10}  {amp:10.4f}  {pha:6.2f}\n"
 
     print(txt)
     with open("TICON-4.txt", "w") as f:

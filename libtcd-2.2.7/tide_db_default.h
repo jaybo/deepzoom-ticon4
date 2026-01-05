@@ -63,7 +63,7 @@
 #define DEFAULT_RESTRICTION_SIZE                    30
 #define DEFAULT_DATUM_SIZE                          70
 #define DEFAULT_LEGALESE_SIZE                       70
-#define DEFAULT_TZFILE_SIZE                         30
+#define DEFAULT_TZFILE_SIZE                         64
 #define DEFAULT_COUNTRY_SIZE                        50
 
 
