@@ -47,20 +47,24 @@ add to .bashrc
 
 ## Break apart an existing .tcd
 
+This is a one-time operation to generate the header .txt segment, and can be ignored if the TCD header has not evolved further.
+
 ```
 cp somerandom.tcd tcd-utils/out.tcd
 cd tcd-utils
 restore_tide_db out.tcd
 # produces out.txt and out.xml
 
-# manually strip contents of out.xml, then
+# manually strip contents of out.xml
+# manually strip just header of out.txt into ../new.head.txt
 cp out.xml ../new.xml
 ```
 
 ## Process TICON-4.txt
 
+May involve multiple manual internal steps to generate datums, add names, etc. if/when TICON-4.txt changes.
 ```
-python test.py
+python TiconToTCD.py
 # generates TICON-4.txt, TICON-4.geojson, TICON-4.json
 ```
 

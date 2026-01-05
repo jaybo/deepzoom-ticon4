@@ -13,10 +13,10 @@
             "console": "integratedTerminal"
         },
                 {
-            "name": "Test.py",
+            "name": "TiconToTCD.py",
             "type": "debugpy",
             "request": "launch",
-            "program": "test.py",
+            "program": "TiconToTCD.py",
             "console": "integratedTerminal"
         }
     ]
