@@ -227,8 +227,8 @@ def write_csv(stations):
     for station in stations:
         
         # testing only
-        if not "Seattle" in station["name"]:
-            continue
+        # if not "Seattle" in station["name"]:
+        #     continue
 
 
         txt += "# BEGIN HOT COMMENTS\n"
@@ -245,7 +245,7 @@ def write_csv(stations):
         txt += f"# !latitude: {station["lat"]}\n"
         txt += f"{station["name"]}\n"
         txt += f"+00:00 :{station["tz"]}\n" # hmm, where did the colon go?
-        txt += "2.023872 meters\n"
+        txt += "0.0 meters\n"
         # J1              0.0400  237.60
         # K1
         for con in tcd_cons:
@@ -292,7 +292,7 @@ def convert_to_json():
     #       'datum_information']
 
     countries_to_ignore = ["USA"]
-    include_seattle = True
+    include_seattle = False
 
     stations = []
 
