@@ -354,6 +354,28 @@ def convert_to_json():
     return stations
 
 
+
+def get_datums(stations):
+    with open("data/y25nf.datums.json", "r") as f:
+        datums = json.load(f)
+    for station in stations:
+        datum = "LAT"
+        match station["datum_information"]:
+            case "USGS Station Datum (see station page for tie to geocentric datum)":
+                datum = "MLLW"
+            case "MSL" \
+                    | "Normal Amsterdam Level" \
+                    | "RH 2000 (Swedish National Height System 2000)" \
+                    | "BSCD2000" \
+                    | "DVR90" \
+                    | "Australian Height Datum":
+                datum = "MSL"
+            case _:
+                pass
+        # datums
+
+
+
 def write_as_json(stations=None):
     if stations is None:
         stations = convert_to_json()
