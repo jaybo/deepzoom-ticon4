@@ -6,6 +6,7 @@ import os, sys
 import json
 import time
 import geojson
+import math
 
 csv_file = "TICON-4.csv"
 json_file = "TICON-4.json"
@@ -196,10 +197,6 @@ tcd_cons = {
 }
 
 
-def convert_datum(old):
-    return "MLLW"
-
-
 def add_station_name(station):
     lat = station["lat"]
     lon = station["lon"]
@@ -207,14 +204,6 @@ def add_station_name(station):
 
     # name = f"{lat}, {lon}, {country_from_ISO}"
     name = get_name_from_latlng(lat, lon, country_from_ISO)
-    # country2 = country2 or country_from_ISO
-
-    # if city and state and country2:
-    #     name = f"{city}, {state}, {country2}"
-    # elif addx and not (city or state):
-    #     name = f"{addx}, {country2}"
-    # elif city and state:
-    # name = f"{city}, {state}, {country2}"
 
     print(name)
 
@@ -223,9 +212,9 @@ def add_station_name(station):
 
 def write_csv(stations):
     txt = ""
-        
+
     for station in stations:
-        
+
         # testing only
         # if not "Seattle" in station["name"]:
         #     continue
@@ -238,14 +227,14 @@ def write_csv(stations):
         txt += f"# station_id_context: {station["gesla_source"]}\n"
         txt += f"# station_id: {station["tide_gauge_name"]}\n"
         txt += "# date_imported: 20241228\n"
-        txt += "# datum: Unknown\n"
+        txt += f"# datum: {station["datum_name"]}\n"
         txt += "# confidence: 10\n"
         txt += "# !units: meters\n"
         txt += f"# !longitude: {station["lon"]}\n"
         txt += f"# !latitude: {station["lat"]}\n"
         txt += f"{station["name"]}\n"
-        txt += f"+00:00 :{station["tz"]}\n" # hmm, where did the colon go?
-        txt += "0.0 meters\n"
+        txt += f"+00:00 :{station["tz"]}\n"  # hmm, where did the colon go?
+        txt += f"{station["datum_value"]} meters\n"
         # J1              0.0400  237.60
         # K1
         for con in tcd_cons:
@@ -260,19 +249,22 @@ def write_csv(stations):
                 else:
                     amp = station_val["amp"] / 100  # cm to m
                     pha = station_val["pha"]
-                    pha = (pha + 360) % 360 # 0 to 360
+                    pha = (pha + 360) % 360  # 0 to 360
                     txt += f"{con:10}  {amp:10.4f}  {pha:6.2f}\n"
 
     print(txt)
-    with open("TICON-4.txt", "w") as f:
+    with open("TICON-4.txt", "w", encoding='utf-8') as f:
         f.write(txt)
 
+
 def stats():
-       # Read TICON-4 data
+    # Read TICON-4 data
     df = pd.read_csv("data/TICON-4.csv", sep=",")
     pd.set_option("display.max_rows", None)
 
-    datum_information = df.groupby(["lat", "lon", "datum_information"]).size().reset_index()
+    datum_information = (
+        df.groupby(["lat", "lon", "datum_information"]).size().reset_index()
+    )
     datum_counts = datum_information["datum_information"].value_counts()
 
     # Count datums
@@ -282,7 +274,7 @@ def stats():
     print(f"Total datums: {len(datum_counts)}")
 
 
-def convert_to_json():
+def TICON_txt_to_json():
     # Read TICON-4 data
     df = pd.read_csv("data/TICON-4.csv", sep=",")
 
@@ -293,9 +285,11 @@ def convert_to_json():
     #       'datum_information']
 
     countries_to_ignore = ["USA"]
+    record_quality_to_include = ["No obvious issues"]
     include_seattle = False
 
     stations = []
+    station_index = 0
 
     for ll, st in df.groupby(["lat", "lon"]):
         country = st["country"].to_list()[0]
@@ -319,6 +313,9 @@ def convert_to_json():
             else:
                 continue
 
+        if record_quality not in record_quality_to_include:
+            continue
+
         cons = st["con"].to_list()
         amps = st["amp"].to_list()
         phas = st["pha"].to_list()
@@ -328,8 +325,10 @@ def convert_to_json():
 
         # name = st[""]
         station = {
+            "index": station_index,
             "lat": lat,
             "lon": lon,
+            "name": "",
             "no_of_obs": no_of_obs,
             "years_of_obs": years_of_obs,
             "start_date": start_date,
@@ -340,9 +339,10 @@ def convert_to_json():
             "country": country,
             "country_from_ISO": country_from_ISO,
             "record_quality": record_quality,
-            "datum_information": datum_information,
             "tz": tz,
-            "name": "",
+            "datum_information": datum_information,
+            "datum_name": "",
+            "datum_value": 0.0,
         }
         for index, con in enumerate(cons):
             amp = amps[index]
@@ -350,48 +350,67 @@ def convert_to_json():
             station[con] = {"amp": amp, "pha": pha}
 
         stations.append(station)
+        station_index = station_index + 1
 
     return stations
 
 
+# one time operation, add the gauge name to the datums
+def add_tide_gauge_names_to_datums(stations):
+    with open("data/y25nf.datums.json", "r", encoding='utf-8') as f:
+        station_datums = json.load(f)
+    for index, station in enumerate(stations):
+        station_datums[index]["tide_gauge_name"] = station["tide_gauge_name"]
+    with open("data/y25nf.datums.json", "w", encoding='utf-8') as f:
+        f.write(json.dumps(station_datums))
 
-def get_datums(stations):
-    with open("data/y25nf.datums.json", "r") as f:
-        datums = json.load(f)
+
+def add_station_datums(stations):
+    with open("data/y25nf.datums.json", "r", encoding='utf-8') as f:
+        station_datums = json.load(f)
+
     for station in stations:
         datum = "LAT"
         match station["datum_information"]:
             case "USGS Station Datum (see station page for tie to geocentric datum)":
                 datum = "MLLW"
-            case "MSL" \
-                    | "Normal Amsterdam Level" \
-                    | "RH 2000 (Swedish National Height System 2000)" \
-                    | "BSCD2000" \
-                    | "DVR90" \
-                    | "Australian Height Datum":
+            case (
+                "MSL"
+                | "Normal Amsterdam Level"
+                | "RH 2000 (Swedish National Height System 2000)"
+                | "BSCD2000"
+                | "DVR90"
+            ):
                 datum = "MSL"
             case _:
                 pass
         # datums
+        tide_gauge_name = station["tide_gauge_name"]
+        datum_match = [
+            item
+            for item in station_datums
+            if item["tide_gauge_name"] == tide_gauge_name
+        ]
+        if len(datum_match) == 1:
+            station["datum_name"] = datum
+            station["datum_value"] = -datum_match[0][datum]
+        else:
+            print("fail", len(datum_match))
 
 
-
-def write_as_json(stations=None):
-    if stations is None:
-        stations = convert_to_json()
-
-    with open(json_file, "w") as f:
+def write_json(stations):
+    with open(json_file, "w", encoding='utf-8') as f:
         f.write(json.dumps(stations))
     return stations
 
 
-def read_as_json():
-    with open(json_file, "r") as f:
+def read_json():
+    with open(json_file, "r", encoding='utf-8') as f:
         stations = json.load(f)
     return stations
 
 
-def add_names(stations, redo=False):
+def add_station_names(stations, redo=False):
     if redo:
         for station in stations:
             station["name"] = None
@@ -399,42 +418,51 @@ def add_names(stations, redo=False):
     for station in stations:
         if not station.get("name", None):
             add_station_name(station)
-            write_as_json(stations)  # checkpoint
+            write_json(stations)  # checkpoint
             time.sleep(1.25)
 
 
-def to_geojson(stations):
+def write_geojson(stations):
     out = []
     for index, station in enumerate(stations):
         pt = geojson.Point([station["lon"], station["lat"]])
         out.append(geojson.Feature(index, pt, {"name": station["name"]}))
     fc = geojson.FeatureCollection(out)
-    with open(geojson_file, "w") as f:
+    with open(geojson_file, "w", encoding='utf-8') as f:
         f.write(json.dumps(fc))
 
 
 if __name__ == "__main__":
-    redo = False
+    redoTICON = False
+    redoNames = True
+    redoDatums = True
 
     # stats()
 
     # create the list from scratch
-    if redo:
-        stations = write_as_json()  # initial create
+    if redoTICON:
+        stations = TICON_txt_to_json()
+        write_json(stations)
         print(len(stations))
 
     # all stations as json
-    stations = read_as_json()
+    stations = read_json()
     print(len(stations))
 
     # add the station name if it doesn't exist
-    add_names(stations, redo)  # redo if True, or continue
+    add_station_names(stations, redoNames)  # force if redoNames
+
+    # only do this once!
+    # add_tide_gauge_names_to_datums(stations)
+
+    # add the station datum
+    add_station_datums(stations) 
 
     # make a geojson version just for visualization
-    to_geojson(stations)
+    write_geojson(stations)
 
     # save as json
-    stations = write_as_json(stations)  # with names appended
+    stations = write_json(stations)  # with names appended
 
     # the point of it all, save as csv for build_tide_db
     write_csv(stations)

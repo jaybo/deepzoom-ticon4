@@ -6,7 +6,7 @@ import requests
 # A unique user agent is required by the Nominatim usage policy
 #
 # geolocator = Nominatim(timeout = 2.0, user_agent="deepzoom")
- 
+
 def get_name_from_latlng(latitude, longitude, country):
     """
     Performs reverse geocoding to get location details from lat/lng.
@@ -20,7 +20,7 @@ def get_name_from_latlng(latitude, longitude, country):
             return f"{name}, {val}"
         else:
             return val
-        
+
     if response.status_code != 200:
         return default
     else:
@@ -31,17 +31,15 @@ def get_name_from_latlng(latitude, longitude, country):
 
             name = ""
             # street, district, city, state, country
-            street = geocoding.get("street", None)
             district = geocoding.get("district", None)
             city = geocoding.get("city", None)
             state = geocoding.get("state", None)
-            if street:
-                name = street
-            if district and district != street:
-                name = append_comma(name, district)
-            if city and city != district and city != street:
+
+            if city:
                 name = append_comma(name, city)
-            if state and state != city and state != district and state != street:
+            if district and district != city:
+                name = append_comma(name, district)
+            if state and state != city and state != district:
                 name = append_comma(name, state)
             if (len(name) == 0):
                 return default
@@ -54,19 +52,19 @@ def get_name_from_latlng(latitude, longitude, country):
 
     # # Combine latitude and longitude into a string format required by the reverse method
     # coordinates = f"{latitude}, {longitude}"
-    
+
     # # Use the reverse method to get location details
     # try:
     #     location = geolocator.reverse(coordinates, exactly_one=True, addressdetails=True)
     #     if location:
     #         # The location data is in a dictionary format within the 'raw' attribute
     #         address = location.raw.get('address', {})
-            
+
     #         # Extract specific components
     #         city = address.get('city', address.get('town', address.get('village', '')))
     #         state = address.get('state', '')
     #         country = address.get('country', '')
-            
+
     #         return city, state, country, location.address
     #     else:
     #         return None, None, None, None
@@ -78,10 +76,6 @@ if __name__ == "__main__":
     lat = 47.6062
     lng = -122.3321
 
-    city, state, country, full_address = get_city_from_latlng(lat, lng)
+    name = get_name_from_latlng(lat, lng)
 
-    print(f"Latitude: {lat}, Longitude: {lng}")
-    print(f"City: {city}")
-    print(f"State: {state}")
-    print(f"Country: {country}")
-    print(f"Full Address: {full_address}")
+    print(f"Latitude: {lat}, Longitude: {lng}, {name}")
