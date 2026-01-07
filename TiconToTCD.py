@@ -435,7 +435,6 @@ def write_geojson(stations):
 if __name__ == "__main__":
     redoTICON = False
     redoNames = True
-    redoDatums = True
 
     # stats()
 
