@@ -210,7 +210,21 @@ def add_station_name(station):
     station["name"] = name
 
 
-def write_csv(stations):
+def make_name_stupidly_complicated(stations):
+    for station in stations:
+        foo = station["name"].split("::")
+        name = foo[0]
+        foo = station["start_date"].split("/")
+        start_date = f"{foo[2]}.{foo[1]}.{foo[0]}"  # 22/12/2009 to 2009.12.22
+        foo = station["end_date"].split("/")
+        end_date = f"{foo[2]}.{foo[1]}.{foo[0]}"  # 22/12/2009 to 2009.12.22
+
+        foo2 = f"{name}::{station["tide_gauge_name"]}::{start_date}::{end_date}::{station["datum_name"]}"
+        station["name"] = foo2
+
+
+# zero_the_offset when calculating LAT/HAT, etc.
+def write_csv(stations, zero_the_offset):
     txt = ""
 
     for station in stations:
@@ -234,7 +248,10 @@ def write_csv(stations):
         txt += f"# !latitude: {station["lat"]}\n"
         txt += f"{station["name"]}\n"
         txt += f"+00:00 :{station["tz"]}\n"  # hmm, where did the colon go?
-        txt += f"{station["datum_value"]} meters\n"
+        if zero_the_offset:
+            txt += "0.0 meters\n"
+        else:
+            txt += f"{station["datum_value"]:.5f} meters\n"
         # J1              0.0400  237.60
         # K1
         for con in tcd_cons:
@@ -253,7 +270,7 @@ def write_csv(stations):
                     txt += f"{con:10}  {amp:10.4f}  {pha:6.2f}\n"
 
     print(txt)
-    with open("TICON-4.txt", "w", encoding='utf-8') as f:
+    with open("TICON-4.txt", "w", encoding="utf-8") as f:
         f.write(txt)
 
 
@@ -357,16 +374,20 @@ def TICON_txt_to_json():
 
 # one time operation, add the gauge name to the datums
 def add_tide_gauge_names_to_datums(stations):
-    with open("data/y25nf.datums.json", "r", encoding='utf-8') as f:
+    with open("data/y25nf.datums.json", "r", encoding="utf-8") as f:
         station_datums = json.load(f)
+    assert len(stations) == len(stations)
+
     for index, station in enumerate(stations):
         station_datums[index]["tide_gauge_name"] = station["tide_gauge_name"]
-    with open("data/y25nf.datums.json", "w", encoding='utf-8') as f:
+    with open("data/y25nf.datums.json", "w", encoding="utf-8") as f:
         f.write(json.dumps(station_datums))
 
 
+# The station datum_value started out at 0.0 so the LAT/HAT etc could be calculated.
+# Now that we have the correct offset, replace datum_value with the correct datum offset.
 def add_station_datums(stations):
-    with open("data/y25nf.datums.json", "r", encoding='utf-8') as f:
+    with open("data/y25nf.datums.json", "r", encoding="utf-8") as f:
         station_datums = json.load(f)
 
     for station in stations:
@@ -384,12 +405,11 @@ def add_station_datums(stations):
                 datum = "MSL"
             case _:
                 pass
-        # datums
-        tide_gauge_name = station["tide_gauge_name"]
+        # datums. Match on timde_gauge_name because it is most unique
+        name = station["name"]
+        tide_gauge_name = name.split("::")[1]
         datum_match = [
-            item
-            for item in station_datums
-            if item["tide_gauge_name"] == tide_gauge_name
+            item for item in station_datums if tide_gauge_name == item["name"].split("::")[1]
         ]
         if len(datum_match) == 1:
             station["datum_name"] = datum
@@ -399,13 +419,13 @@ def add_station_datums(stations):
 
 
 def write_json(stations):
-    with open(json_file, "w", encoding='utf-8') as f:
+    with open(json_file, "w", encoding="utf-8") as f:
         f.write(json.dumps(stations))
     return stations
 
 
 def read_json():
-    with open(json_file, "r", encoding='utf-8') as f:
+    with open(json_file, "r", encoding="utf-8") as f:
         stations = json.load(f)
     return stations
 
@@ -428,13 +448,13 @@ def write_geojson(stations):
         pt = geojson.Point([station["lon"], station["lat"]])
         out.append(geojson.Feature(index, pt, {"name": station["name"]}))
     fc = geojson.FeatureCollection(out)
-    with open(geojson_file, "w", encoding='utf-8') as f:
+    with open(geojson_file, "w", encoding="utf-8") as f:
         f.write(json.dumps(fc))
 
 
 if __name__ == "__main__":
     redoTICON = False
-    redoNames = True
+    redoNames = False
 
     # stats()
 
@@ -455,13 +475,17 @@ if __name__ == "__main__":
     # add_tide_gauge_names_to_datums(stations)
 
     # add the station datum
-    add_station_datums(stations) 
+    add_station_datums(stations)
 
     # make a geojson version just for visualization
     write_geojson(stations)
+
+    # one time operation
+    # make_name_stupidly_complicated(stations)
 
     # save as json
     stations = write_json(stations)  # with names appended
 
     # the point of it all, save as csv for build_tide_db
-    write_csv(stations)
+    # zero_th_offset when calculating LAT/HAT/etc.
+    write_csv(stations, False)
