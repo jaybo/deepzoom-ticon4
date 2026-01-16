@@ -13,7 +13,7 @@ def get_name_from_latlng(latitude, longitude, country):
     """
     default = f"{latitude} {longitude}, {country}"
 
-    response = requests.get(f"https://nominatim.openstreetmap.org/reverse?email=jay@deepzoom.com&format=geocodejson&lat={latitude}&lon={longitude}&accept-language=en-US")
+    response = requests.get(f"https://nominatim.openstreetmap.org/reverse?email=jay@deepzoom.com&format=geocodejson&lat={latitude}&lon={longitude}&accept-language=en-US&layer=natural,poi")
 
     def append_comma (name, val):
         if (len (name) > 0):
@@ -29,13 +29,13 @@ def get_name_from_latlng(latitude, longitude, country):
         try:
             geocoding = data["features"][0]["properties"]["geocoding"]
 
-            name = ""
+            name = geocoding.get("name", "")
             # street, district, city, state, country
             district = geocoding.get("district", None)
             city = geocoding.get("city", None)
             state = geocoding.get("state", None)
 
-            if city:
+            if len(name) == 0 and city:
                 name = append_comma(name, city)
             if district and district != city:
                 name = append_comma(name, district)
@@ -73,9 +73,14 @@ def get_name_from_latlng(latitude, longitude, country):
 
 if __name__ == "__main__":
     # Example Usage: Seattle, WA coordinates
-    lat = 34.6117
-    lng = 138.8492
+    # lat = 34.6117
+    # lng = 138.8492
 
-    name = get_name_from_latlng(lat, lng, "Japan")
+    # name = get_name_from_latlng(lat, lng, "Japan")
+
+    lat = 45.453667
+    lng = -0.92305
+
+    name = get_name_from_latlng(lat, lng, "France")
 
     print(f"Latitude: {lat}, Longitude: {lng}, {name}")
