@@ -80,6 +80,17 @@ cp harmonics-jab-20251229-nonfree.tcd /mnt/e/TideFiles
 rm /mnt/e/TideFiles/harmonics-jab-20251229-nonfree.tcd.json
 ```
 
+## fix the naes
+
+Somewhere in the chain through libtcd and TideFileGenerator, the UTF-8 station
+names are mangled into LATIN-1.  Recopy the correct versions. This only needs to 
+be done once each time TideFileGenerator makes the 
+
+```
+python fix_names.py
+# operates on \y25nf\y25fr.all.text.geojson to produce \y25fr\y25fr.all.geojson"
+```
+
 ## Seattle
 Using constituents from NOAA 
 https://tidesandcurrents.noaa.gov/harcon.html?unit=0&timezone=0&id=9447130&name=Seattle&state=WA
