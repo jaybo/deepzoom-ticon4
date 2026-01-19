@@ -41,7 +41,7 @@ tcd_cons = {
     "S4": "S4",
     "S6": "S6",
     "T2": "T2",
-    "LDA2": "LM2",  # CHANGED
+    "LDA2": "LAMBDA2",  # CHANGED
     "MU2": "MI2",  # CHANGED
     "NU2": "NI2",  # CHANGED
     "RHO1": "RHO1",
@@ -207,13 +207,12 @@ def add_station_name(station):
 
     print(name)
 
-    station["name"] = name
+    station["name_from_lat_lon"] = name
 
 
 def make_name_stupidly_complicated(stations):
     for station in stations:
-        foo = station["name"].split("::")
-        name = foo[0]
+        name = station["name_from_lat_lon"]
         foo = station["start_date"].split("/")
         start_date = f"{foo[2]}.{foo[1]}.{foo[0]}"  # 22/12/2009 to 2009.12.22
         foo = station["end_date"].split("/")
@@ -346,6 +345,7 @@ def TICON_txt_to_json():
             "lat": lat,
             "lon": lon,
             "name": "",
+            "name_from_lat_lon": "",
             "no_of_obs": no_of_obs,
             "years_of_obs": years_of_obs,
             "start_date": start_date,
@@ -396,21 +396,26 @@ def add_station_datums(stations):
             case "USGS Station Datum (see station page for tie to geocentric datum)":
                 datum = "MLLW"
             case (
-                "MSL"
+                "MHL"
                 | "Normal Amsterdam Level"
                 | "RH 2000 (Swedish National Height System 2000)"
                 | "BSCD2000"
                 | "DVR90"
             ):
+                datum = "MHW"
+            case (
+                "MSL"
+                | "BHS77"
+            ):
                 datum = "MSL"
+
             case _:
                 pass
-        # datums. Match on timde_gauge_name because it is most unique
+        # datums. Match on tide_gauge_name because it is most unique
         name = station["name"]
         tide_gauge_name = name.split("::")[1]
         datum_match = [
-            item for item in station_datums if tide_gauge_name == item["name"].split("::")[1]
-        ]
+            item for item in station_datums if tide_gauge_name == item["name"]]
         if len(datum_match) == 1:
             station["datum_name"] = datum
             station["datum_value"] = -datum_match[0][datum]
@@ -446,7 +451,7 @@ def write_geojson(stations):
     out = []
     for index, station in enumerate(stations):
         pt = geojson.Point([station["lon"], station["lat"]])
-        out.append(geojson.Feature(index, pt, {"name": station["name"]}))
+        out.append(geojson.Feature(index, pt, {"name": station["datum_information"]})) # station["name"]}))
     fc = geojson.FeatureCollection(out)
     with open(geojson_file, "w", encoding="utf-8") as f:
         f.write(json.dumps(fc))
@@ -463,16 +468,19 @@ if __name__ == "__main__":
         stations = TICON_txt_to_json()
         write_json(stations)
         print(len(stations))
+    else:
+        # all stations as json
+        stations = read_json()
+        print(len(stations))
 
-    # all stations as json
-    stations = read_json()
-    print(len(stations))
-
-    # add the station name if it doesn't exist
+    # add the station name if it doesn't already exist
     add_station_names(stations, redoNames)  # force if redoNames
 
     # only do this once!
     # add_tide_gauge_names_to_datums(stations)
+
+    # one time operation
+    # make_name_stupidly_complicated(stations)
 
     # add the station datum
     add_station_datums(stations)
@@ -480,12 +488,11 @@ if __name__ == "__main__":
     # make a geojson version just for visualization
     write_geojson(stations)
 
-    # one time operation
-    # make_name_stupidly_complicated(stations)
+
 
     # save as json
     stations = write_json(stations)  # with names appended
 
     # the point of it all, save as csv for build_tide_db
-    # zero_th_offset when calculating LAT/HAT/etc.
+    # True means zero_the_offset when calculating LAT/HAT/etc.
     write_csv(stations, False)

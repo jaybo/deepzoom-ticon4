@@ -60,6 +60,6 @@ if __name__ == "__main__":
     print("out", len(stations_out["features"]))
 
     #
-    overwrite_station_names(stations_in, stations_out)  # force if redoNames
+    overwrite_station_names(stations_in, stations_out)  
 
     write_output(stations_out)

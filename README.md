@@ -1,6 +1,10 @@
-# TICON-4 processing
+# TICON-4 to .tcd converter
 
 Converts TICON-4.txt file containing worldwide tide harmonics into the .tcd format used by XTide.
+
+Unfinished! Although it creates a seemingly reasonable .tcd file, the results are questionable.
+British tide curves don't match, although high/low times are fairly good.
+Lots of questions remain about what datum to choose for stations, many of which are labeled "Unspecified".
 
 The following is for WSL2 Ubuntu 24.04 on Windows.
 
@@ -17,7 +21,8 @@ Edit `tide_db_default.h`:
 ```
 #define DEFAULT_TZFILE_SIZE  64  // was 30
 ```
-Build libtcd 
+
+Compile libtcd 
 
 ```
 cd libtcd
@@ -28,9 +33,6 @@ sudo make install
 
 ## Build tcd_utils
 
-
-
-
 ```
 cd libtcd
 ./configure
@@ -39,10 +41,12 @@ sudo make install
 ```
 
 ## Getting tcd_utils to work
+
 add to .bashrc
 `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib`
 
 ## Get python libs
+
 `pip install -r requirements.txt`
 
 ## Break apart an existing .tcd
@@ -63,12 +67,16 @@ cp out.xml ../new.xml
 ## Process TICON-4.txt
 
 May involve multiple manual internal steps to generate datums, add names, etc. if/when TICON-4.txt changes.
+
 ```
-python TiconToTCD.py
 # generates TICON-4.txt, TICON-4.geojson, TICON-4.json
+python TiconToTCD.py
+
 ```
 
 ## Create new .tcd
+
+The final output file is `harmonics-jab-20251229-nonfree.tcd`
 
 ```
 # ./test.sh
@@ -76,23 +84,27 @@ python TiconToTCD.py
 cat new.head.txt TICON-4.txt > new.txt
 rm harmonics-jab-20251229-nonfree.tcd
 tcd-utils/build_tide_db harmonics-jab-20251229-nonfree.tcd new.txt new.xml
+
+# Specific to my .json station list, generally ignore
 cp harmonics-jab-20251229-nonfree.tcd /mnt/e/TideFiles
 rm /mnt/e/TideFiles/harmonics-jab-20251229-nonfree.tcd.json
 ```
 
-## fix the naes
+## Fix the names
 
 Somewhere in the chain through libtcd and TideFileGenerator, the UTF-8 station
 names are mangled into LATIN-1.  Recopy the correct versions. This only needs to 
-be done once each time TideFileGenerator makes the 
+be done once each time TideFileGenerator makes \y25nf\y25nf.all.text.geojson.
 
 ```
+# Specific to my .json station list, generally ignore
+# operates on \y25nf\y25nf.all.text.geojson to produce \y25nf\y25nf.all.geojson"
 python fix_names.py
-# operates on \y25nf\y25fr.all.text.geojson to produce \y25fr\y25fr.all.geojson"
 ```
 
-## Seattle
-Using constituents from NOAA 
+## Seattle example
+Using constituents from NOAA, in meters
+
 https://tidesandcurrents.noaa.gov/harcon.html?unit=0&timezone=0&id=9447130&name=Seattle&state=WA
 
 https://tidesandcurrents.noaa.gov/datums.html?datum=MTL&units=1&epoch=0&id=9447130&name=Seattle&state=WA
